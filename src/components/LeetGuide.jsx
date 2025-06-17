@@ -10,8 +10,7 @@ const LeetGuide = () => {
   const [showGuide, setShowGuide] = useState(false);
   const [error, setError] = useState("");
 
-  const API_BASE_URL = 'http://localhost:8080/api'; // Use your proxy backend
-  // const API_BASE_URL = "https://alfa-leetcode-api.onrender.com";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -30,31 +29,17 @@ const LeetGuide = () => {
   };
 
   const getLeetUserData = async (username) => {
-    const year = new Date().getFullYear();
-    const endpoints = [
-      `skillStats/${username}`,
-      `userContestRankingInfo/${username}`
-      //`userProfileCalendar?username=${username}&year=${year}`,
-    ];
-
+    const endpoints = [`skillStats/${username}`,`${username}/solved`, `${username}/contest`, `${username}/submission?limit=10`];
     const requests = endpoints.map((endpoint) =>
       fetchWithRetry(`${API_BASE_URL}/${endpoint}`)
     );
-
-    const [skillRes, contestRes, calendarRes] = await Promise.all(requests);
-
-    const calendarData = calendarRes.data.submissionCalendar || {};
-    const timestamps = Object.keys(calendarData).map(
-      (ts) => parseInt(ts) * 1000
-    );
-    const recentActivity = timestamps.filter(
-      (ts) => ts >= Date.now() - 7 * 24 * 60 * 60 * 1000
-    );
+    const [skillStatsRes, solvedRes, contestRes, recentSubsRes] = await Promise.all(requests);
 
     return {
-      skillStats: skillRes.data,
+      skillStats: skillStatsRes.data,
+      solved : solvedRes.data,
       contestRanking: contestRes.data,
-      // recentSubmissionDays: recentActivity.length,
+      recentSubmissions: recentSubsRes.data
     };
   };
 
@@ -81,19 +66,24 @@ const LeetGuide = () => {
     try {
       const data = await getLeetUserData(username);
 
+      // const prompt = `
       const prompt = `
-You are an AI mentor helping a LeetCode user improve.
+You are an AI mentor helping a LeetCode user improve their skills. Analyze their performance using the data below and give clear, personalized feedback.
 
-Here is the user's data:
+User's Data:
 - Skill Stats: ${JSON.stringify(data.skillStats)}
-- Contest Ranking: ${JSON.stringify(data.contestRanking)}
+- Contest Data: ${JSON.stringify(data.contestRanking)}
+- Solved Stats: ${JSON.stringify(data.solved)}
+- Recent Submissions: ${JSON.stringify(data.recentSubmissions)}
 
-Based on this data, provide:
-1. Topics the user is strong/weak in.
-2. What DSA topics they should focus more on.
-3. How consistent they are — and tips for improving it.
-4. Whether they need to participate in more contests.
-5. Personalized improvement suggestions.
+Your response must include:
+1. Topics they are strong in and weak in (based on tag counts).
+2. Which DSA concepts they should focus more on and why.
+3. Comment on their consistency (look at submission and contest trends) and how to improve it.
+4. Should they attend more contests? If yes, why and how often.
+5. Provide 3–5 practical and actionable improvement tips (e.g., “Try 5 new hard-level DP problems this week”).
+
+Be specific. Keep the tone friendly but to the point — like a coding coach, not a cheerleader. Avoid generic advice. Mention any patterns, topic neglect, or strong trends you see.
 `;
 
       sessionStorage.setItem(cacheKey, JSON.stringify({ guidance: prompt }));
