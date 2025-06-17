@@ -25,23 +25,7 @@ const InputBox = ({
       <button
         onClick={onSubmit}
         disabled={isLoading || !value.trim()}
-        className="w-full font-medium py-3 px-4 transition-colors rounded-2xl"
-        style={{
-          backgroundColor: isLoading || !value.trim() ? '#9ca3af' : '#3b82f6',
-          color: 'white',
-          border: 'none',
-          cursor: isLoading || !value.trim() ? 'not-allowed' : 'pointer'
-        }}
-        onMouseOver={(e) => {
-          if (!isLoading && value.trim()) {
-            e.target.style.backgroundColor = '#2563eb';
-          }
-        }}
-        onMouseOut={(e) => {
-          if (!isLoading && value.trim()) {
-            e.target.style.backgroundColor = '#3b82f6';
-          }
-        }}
+        className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {buttonLabel}
       </button>
