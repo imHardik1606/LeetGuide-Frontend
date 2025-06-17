@@ -29,17 +29,23 @@ const LeetGuide = () => {
   };
 
   const getLeetUserData = async (username) => {
-    const endpoints = [`skillStats/${username}`,`${username}/solved`, `${username}/contest`, `${username}/submission?limit=10`];
+    const endpoints = [
+      `skillStats/${username}`,
+      `${username}/solved`,
+      `${username}/contest`,
+      `${username}/submission?limit=10`,
+    ];
     const requests = endpoints.map((endpoint) =>
       fetchWithRetry(`${API_BASE_URL}/${endpoint}`)
     );
-    const [skillStatsRes, solvedRes, contestRes, recentSubsRes] = await Promise.all(requests);
+    const [skillStatsRes, solvedRes, contestRes, recentSubsRes] =
+      await Promise.all(requests);
 
     return {
       skillStats: skillStatsRes.data,
-      solved : solvedRes.data,
+      solved: solvedRes.data,
       contestRanking: contestRes.data,
-      recentSubmissions: recentSubsRes.data
+      recentSubmissions: recentSubsRes.data,
     };
   };
 
@@ -89,6 +95,22 @@ Be specific. Keep the tone friendly but to the point — like a coding coach, no
       sessionStorage.setItem(cacheKey, JSON.stringify({ guidance: prompt }));
       setGuidance(prompt);
       setShowGuide(true);
+
+      const saveToDB = async () => {
+        try {
+          await axios.post(`${API_BASE_URL}/api/saveReport`, {
+            username,
+            output: prompt,
+            dateTime: new Date().toISOString(),
+            browserInfo: navigator.userAgent,
+          });
+          console.log("Saved to MongoDB");
+        } catch (err) {
+          console.error("MongoDB Save Error:", err);
+        }
+      };
+
+      await saveToDB();
     } catch (error) {
       console.error("API Error:", error);
       if (error.response?.status === 404) {
