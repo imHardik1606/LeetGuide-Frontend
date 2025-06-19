@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import InputBox from "./InputBox";
 import OutputBox from "./OutputBox";
+import { getAIResponse } from "../service/gemini";
 
 const LeetGuide = () => {
   const [username, setUsername] = useState("");
@@ -30,23 +31,36 @@ const LeetGuide = () => {
 
   const getLeetUserData = async (username) => {
     const endpoints = [
-      `skillStats/${username}`,
+      `${username}/skillStats`,
       `${username}/solved`,
       `${username}/contest`,
-      `${username}/submission?limit=10`,
+      `${username}/recent`,
     ];
-    const requests = endpoints.map((endpoint) =>
-      fetchWithRetry(`${API_BASE_URL}/${endpoint}`)
-    );
-    const [skillStatsRes, solvedRes, contestRes, recentSubsRes] =
-      await Promise.all(requests);
 
-    return {
-      skillStats: skillStatsRes.data,
-      solved: solvedRes.data,
-      contestRanking: contestRes.data,
-      recentSubmissions: recentSubsRes.data,
-    };
+    const requests = endpoints.map((endpoint) =>
+      fetchWithRetry(`${API_BASE_URL}/${endpoint}`).catch((err) => {
+        // Rethrow to detect individual 404
+        if (err.response?.status === 404) throw new Error("UserNotFound");
+        throw err;
+      })
+    );
+
+    try {
+      const [skillStatsRes, solvedRes, contestRes, recentSubsRes] =
+        await Promise.all(requests);
+
+      return {
+        skillStats: skillStatsRes.data,
+        solved: solvedRes.data,
+        contestRanking: contestRes.data,
+        recentSubmissions: recentSubsRes.data,
+      };
+    } catch (err) {
+      if (err.message === "UserNotFound") {
+        throw new Error("UserNotFound");
+      }
+      throw err;
+    }
   };
 
   const generateGuidance = async () => {
@@ -72,54 +86,54 @@ const LeetGuide = () => {
     try {
       const data = await getLeetUserData(username);
 
-      // const prompt = `
       const prompt = `
-You are an AI mentor helping a LeetCode user improve their skills. Analyze their performance using the data below and give clear, personalized feedback.
+        You are an AI mentor guiding a LeetCode user who is preparing for Big Tech interviews (Google, Amazon, Meta) and also actively working on improving in Competitive Programming (CP). Analyze their data below and provide focused, personalized feedback within 200 words.
 
-User's Data:
-- Skill Stats: ${JSON.stringify(data.skillStats)}
-- Contest Data: ${JSON.stringify(data.contestRanking)}
-- Solved Stats: ${JSON.stringify(data.solved)}
-- Recent Submissions: ${JSON.stringify(data.recentSubmissions)}
+        User Data:
+        - Skill Stats: ${JSON.stringify(data.skillStats)}
+        - Contest Data: ${JSON.stringify(data.contestRanking)}
+        - Solved Stats: ${JSON.stringify(data.solved)}
+        - Recent Submissions: ${JSON.stringify(data.recentSubmissions)}
 
-Your response must include:
-1. Topics they are strong in and weak in (based on tag counts).
-2. Which DSA concepts they should focus more on and why.
-3. Comment on their consistency (look at submission and contest trends) and how to improve it.
-4. Should they attend more contests? If yes, why and how often.
-5. Provide 3–5 practical and actionable improvement tips (e.g., “Try 5 new hard-level DP problems this week”).
+        Your response must include:
+        1. Topics they are strong/weak in (based on tag counts).
+        2. DSA areas to prioritize for Big Tech interviews (with reasons).
+        3. CP-specific feedback based on contest participation/performance.
+        4. Comments on their consistency (from submissions & contests) and how to improve it.
+        5. Give 3–5 short, actionable improvement tips (e.g., "Solve 3 new Hard-level Graph problems this week").
 
-Be specific. Keep the tone friendly but to the point — like a coding coach, not a cheerleader. Avoid generic advice. Mention any patterns, topic neglect, or strong trends you see.
-`;
+        Constraints:
+        - Be specific, structured, and under 200 words.
+        - No generic advice — mention patterns, gaps, or neglected areas.
+        - Friendly but sharp — like a focused coding coach, not a cheerleader.
+        - Respond in plain text only (no formatting or markdown).
+        - Always start with appreciation and username
+      `;
 
-      sessionStorage.setItem(cacheKey, JSON.stringify({ guidance: prompt }));
-      setGuidance(prompt);
+      const aiResponse = await getAIResponse(prompt);
+      setGuidance(aiResponse);
       setShowGuide(true);
 
-      const saveToDB = async () => {
-        try {
-          await axios.post(`${API_BASE_URL}/api/saveReport`, {
-            username,
-            output: prompt,
-            dateTime: new Date().toISOString(),
-            browserInfo: navigator.userAgent,
-          });
-          console.log("Saved to MongoDB");
-        } catch (err) {
-          console.error("MongoDB Save Error:", err);
-        }
-      };
+      sessionStorage.setItem(cacheKey, JSON.stringify({ guidance: aiResponse }));
 
-      await saveToDB();
-    } catch (error) {
-      console.error("API Error:", error);
-      if (error.response?.status === 404) {
+      // Save to DB
+      await axios.post(`${API_BASE_URL}/saveReport`, {
+        username,
+        output: aiResponse,
+        dateTime: new Date().toISOString(),
+        browserInfo: navigator.userAgent,
+      });
+    } catch (err) {
+      console.error("Guidance Error:", err);
+
+      if (err.message === "UserNotFound") {
         setError("User not found. Please check the username and try again.");
-      } else if (error.response?.status === 429) {
+      } else if (err.response?.status === 429) {
         setError("Rate limit exceeded. Please try again later.");
       } else {
         setError("Something went wrong. Please try again.");
       }
+
       setShowGuide(false);
     } finally {
       setIsLoading(false);
