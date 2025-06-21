@@ -30,38 +30,43 @@ const LeetGuide = () => {
   };
 
   const getLeetUserData = async (username) => {
-    const endpoints = [
-      `${username}/skillStats`,
-      `${username}/solved`,
-      `${username}/contest`,
-      `${username}/recent`,
-    ];
+  const endpoints = [
+    "skillStats",
+    "solved",
+    "contest",
+    "recent",
+  ];
 
-    const requests = endpoints.map((endpoint) =>
-      fetchWithRetry(`${API_BASE_URL}/${endpoint}`).catch((err) => {
-        // Rethrow to detect individual 404
-        if (err.response?.status === 404) throw new Error("UserNotFound");
-        throw err;
-      })
-    );
+  const results = await Promise.allSettled(
+    endpoints.map((endpoint) =>
+      fetchWithRetry(`${API_BASE_URL}/${username}/${endpoint}`)
+    )
+  );
 
-    try {
-      const [skillStatsRes, solvedRes, contestRes, recentSubsRes] =
-        await Promise.all(requests);
-
-      return {
-        skillStats: skillStatsRes.data,
-        solved: solvedRes.data,
-        contestRanking: contestRes.data,
-        recentSubmissions: recentSubsRes.data,
-      };
-    } catch (err) {
-      if (err.message === "UserNotFound") {
-        throw new Error("UserNotFound");
-      }
-      throw err;
-    }
+  const data = {
+    skillStats: null,
+    solved: null,
+    contestRanking: null,
+    recentSubmissions: null,
   };
+
+  let allFailed = true;
+
+  results.forEach((result, index) => {
+    const key = Object.keys(data)[index];
+    if (result.status === "fulfilled" && result.value?.data) {
+      data[key] = result.value.data;
+      allFailed = false;
+    }
+  });
+
+  if (allFailed || !data.skillStats || !data.solved) {
+    throw new Error("UserNotFound");
+  }
+
+  return data;
+};
+
 
   const generateGuidance = async () => {
     if (!username.trim()) {
@@ -143,12 +148,13 @@ const LeetGuide = () => {
             1. **Strengths**: Tags/topics with high problem count or strong coverage.
             2. **Weaknesses**: Underserved or untouched topics that need attention.
             3. **Big Tech Focus**: 2–3 specific DSA areas to prioritize with reasons.
-            4. **CP Insights**: Analysis of contest performance, frequency, rating trend.
+            4. **CP Insights**: Analysis of contest performance, frequency, rating trend. If no or less than five contest attended must suggest to take part in them and provide the reason.
             5. **Consistency Review**: Daily/weekly activity pattern and improvement tips.
             6. **Action Plan**: 3–5 tailored, impactful tasks. Be direct (e.g., "Solve 3 Hard-level Graph problems").
 
           Output Constraints:
-          - No markdown, formatting — plain text only.
+          - Strictly No markdown, formatting — plain text only.
+          - No asterik signs "*" in the response.
           - No generic advice — base everything strictly on provided stats.
           - Be concise, insightful, and solution-focused.
           - Write like a sharp technical coach — encouraging, not flattering.
