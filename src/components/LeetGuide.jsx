@@ -30,58 +30,59 @@ const LeetGuide = () => {
   };
 
   const getLeetUserData = async (username) => {
-  const endpoints = [
-    "skillStats",
-    "solved",
-    "contest",
-    "recent",
-  ];
+    const endpointMap = {
+      name: "name",
+      skillStats: "skillStats",
+      solved: "solved",
+      contestRanking: "contest",
+      recentSubmissions: "recent",
+    };
 
-  const results = await Promise.allSettled(
-    endpoints.map((endpoint) =>
-      fetchWithRetry(`${API_BASE_URL}/${username}/${endpoint}`)
-    )
-  );
+    const results = await Promise.allSettled(
+      Object.values(endpointMap).map((endpoint) =>
+        fetchWithRetry(`${API_BASE_URL}/${username}/${endpoint}`)
+      )
+    );
 
-  const data = {
-    skillStats: null,
-    solved: null,
-    contestRanking: null,
-    recentSubmissions: null,
-  };
+    const data = {};
+    let allFailed = true;
 
-  let allFailed = true;
+    Object.keys(endpointMap).forEach((key, index) => {
+      const result = results[index];
+      if (result.status === "fulfilled" && result.value?.data) {
+        data[key] = result.value.data;
+        allFailed = false;
+      } else {
+        data[key] = null;
+      }
+    });
 
-  results.forEach((result, index) => {
-    const key = Object.keys(data)[index];
-    if (result.status === "fulfilled" && result.value?.data) {
-      data[key] = result.value.data;
-      allFailed = false;
+    if (allFailed || !data.skillStats || !data.solved) {
+      throw new Error("UserNotFound");
     }
-  });
 
-  if (allFailed || !data.skillStats || !data.solved) {
-    throw new Error("UserNotFound");
-  }
-
-  return data;
-};
-
+    return data;
+  };
 
   const generateGuidance = async () => {
     if (!username.trim()) {
       setError("Please enter a valid username");
       return;
+    } else {
+      setError("");
     }
 
     const cacheKey = `leet-${username}`;
     const cachedData = sessionStorage.getItem(cacheKey);
-
     if (cachedData) {
       const parsed = JSON.parse(cachedData);
-      setGuidance(parsed.guidance);
-      setShowGuide(true);
-      return;
+      const isFresh =
+        Date.now() - new Date(parsed.timestamp).getTime() < 1000 * 60 * 10;
+      if (isFresh) {
+        setGuidance(parsed.guidance);
+        setShowGuide(true);
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -91,120 +92,80 @@ const LeetGuide = () => {
     try {
       const data = await getLeetUserData(username);
 
-      // const prompt = `
-      //   You are an AI mentor guiding a LeetCode user who is preparing for Big Tech interviews (Google, Amazon, Meta) and also actively working on improving in Competitive Programming (CP). Analyze their data below and provide focused, personalized feedback within 200 words.
-
-      //   User Data:
-      //   - Skill Stats: ${JSON.stringify(data.skillStats)}
-      //   - Contest Data: ${JSON.stringify(data.contestRanking)}
-      //   - Solved Stats: ${JSON.stringify(data.solved)}
-      //   - Recent Submissions: ${JSON.stringify(data.recentSubmissions)}
-
-      //   Your response must include:
-      //   1. Topics they are strong/weak in (based on tag counts).
-      //   2. DSA areas to prioritize for Big Tech interviews (with reasons).
-      //   3. CP-specific feedback based on contest participation/performance.
-      //   4. Comments on their consistency (from submissions & contests) and how to improve it.
-      //   5. Give 3–5 short, actionable improvement tips (e.g., "Solve 3 new Hard-level Graph problems this week").
-
-      //   Constraints:
-      //   - Be specific, structured, and under 200 words.
-      //   - No generic advice — mention patterns, gaps, or neglected areas.
-      //   - Friendly but sharp — like a focused coding coach, not a cheerleader.
-      //   - Respond in plain text only (no formatting or markdown).
-      //   - Always start with appreciation and username
-
-      //   Always answer in the following format: 
-      //   Okay, LeetCode user, here's your analysis:
-      //   Strengths:
-      //   Your fundamentals (Arrays, Strings) and intermediate skills (Hash Tables, Greedy) are solid. 
-      //   Weak areas:
-      //   Game Theory, Bitmask, and topics you haven't yet started.
-
-      //   For Big Tech interviews, prioritize Graphs (more Hard problems), Trees (esp. Binary Trees), and System Design. Refine DP; 71 problems is good, but ensure you can apply the concepts quickly.
-
-      //   For CP, rating ~1788 is respectable, but aim for higher consistency. 18 contests shows some engagement. Target weekly virtual contests to build speed.
-      //   Submission history suggests some daily activity but can be more consistent.
-
-      //   Actionable tips:
-      //   1. Solve 3 new Hard-level Graph problems this week.
-      //   2. Complete all Blind 75 problems if you haven't already.
-      //   3. Participate in at least 2 virtual contests per week.
-      //   4. Solve 1 Game Theory problem and 1 Bitmask problem per week.
-      //   5. Implement solutions to the top 5 most frequent interview questions.
-      // `;
       const prompt = `
-          You are an AI coding strategist guiding a LeetCode user preparing for Big Tech interviews (Google, Amazon, Meta) and practicing Competitive Programming (CP). Based on the user’s performance data below, generate a tight, expert-level review — no more than 200 words.
+    You are a sharp, no-fluff AI coding strategist reviewing a LeetCode user's progress for Big Tech interviews (Google, Amazon, Meta) and Competitive Programming goals. Based on the user’s performance data below, generate a laser-focused performance review in **under 200 words**.
 
-          User Data:
-          - Skill Stats: ${JSON.stringify(data.skillStats)}
-          - Contest History: ${JSON.stringify(data.contestRanking)}
-          - Problems Solved: ${JSON.stringify(data.solved)}
-          - Recent Submissions: ${JSON.stringify(data.recentSubmissions)}
+    User Data:
+    - User's name: ${JSON.stringify(data.name)}
+    - Skill Stats: ${JSON.stringify(data.skillStats)}
+    - Contest History: ${JSON.stringify(data.contestRanking)}
+    - Problems Solved: ${JSON.stringify(data.solved)}
+    - Recent Submissions: ${JSON.stringify(data.recentSubmissions)}
 
-          Instructions — your analysis must:
-          - Start with a short, appreciative note using the username.
-          - Clearly label and separate the following sections:
-            1. **Strengths**: Tags/topics with high problem count or strong coverage.
-            2. **Weaknesses**: Underserved or untouched topics that need attention.
-            3. **Big Tech Focus**: 2–3 specific DSA areas to prioritize with reasons.
-            4. **CP Insights**: Analysis of contest performance, frequency, rating trend. If no or less than five contest attended must suggest to take part in them and provide the reason.
-            5. **Consistency Review**: Daily/weekly activity pattern and improvement tips.
-            6. **Action Plan**: 3–5 tailored, impactful tasks. Be direct (e.g., "Solve 3 Hard-level Graph problems").
+    Instructions — your analysis **must**:
+    - No emojis before at the start of the response.
+    - Start with a rotating exclamatory remark (e.g., "Wow!", "Genius!", "Impressive!", "Brilliant!") before addressing the user by name.
+    - Do NOT mention the total number of problems solved anywhere.
+    - If latest submission is older than 2 days or more in past, **highlight the gap** and urge the user to be consistent.
+    - If contest participation is missing or fewer than 3, **strongly recommend** joining upcoming contests with a solid reason why.
+    - Clearly divide your review into the following **plain text** sections (no markdown, no asterisks, no number lists):
 
-          Output Constraints:
-          - Strictly No markdown, formatting — plain text only.
-          - No asterik signs "*" in the response.
-          - No generic advice — base everything strictly on provided stats.
-          - Be concise, insightful, and solution-focused.
-          - Write like a sharp technical coach — encouraging, not flattering.
-          - You can use Emojis with section headings.
-          - End with: "Stay consistent — sharp minds win."
+    Format strictly like this (replace [username]):
 
-          Your output should **strictly follow this structure**:
-          Okay, [username], here's your performance breakdown:
+    [Exclamation] [realname], here's your performance breakdown:
 
-          Strengths:
-          ...
+    Strengths:
+    State strong topic areas or skill categories based on high performance. Be precise.
 
-          Weaknesses:
-          ...
+    Weaknesses:
+    Point out areas with low activity or poor mastery. Focus on where improvement is needed.
 
-          Big Tech Focus:
-          ...
+    Big Tech Focus:
+    Recommend 2–3 high-impact DSA areas to target (e.g., Trees, Graphs, DP) and explain why each is important for Big Tech interviews.
 
-          CP Insights:
-          ...
+    CP Insights:
+    Evaluate contest activity, consistency, and performance. If fewer than 3 contests, push to join upcoming ones and explain how it builds pressure-handling and speed.
 
-          Consistency Review:
-          ...
+    Consistency Review:
+    Assess submission frequency. If the last activity is older than 2 days, call it out directly. Suggest building a daily habit.
 
-          Action Plan:
-          ...
+    Action Plan:
+    List 3–5 direct, impactful tasks personalized to the user's profile (e.g., "Master Sliding Window with 2 Medium problems and 1 Hard").
 
-          Always end with a motivational line.
-          `;
-
-
+    Important Constraints:
+    - No markdown or formatting syntax.
+    - No vague advice — tailor everything to the provided stats only.
+    - Use emojis for each section heading to improve readability.
+    - End with this exact motivational line: Stay consistent — sharp minds win.
+`;
 
       const aiResponse = await getAIResponse(prompt);
+
+      if (!aiResponse || aiResponse.trim() === "") {
+        throw new Error("EmptyAIResponse");
+      }
+
       setGuidance(aiResponse);
       setShowGuide(true);
 
-      sessionStorage.setItem(cacheKey, JSON.stringify({ guidance: aiResponse }));
+      sessionStorage.setItem(
+        cacheKey,
+        JSON.stringify({ guidance: aiResponse, timestamp: new Date().toISOString() })
+      );
 
-      // Save to DB
       await axios.post(`${API_BASE_URL}/saveReport`, {
         username,
         output: aiResponse,
         dateTime: new Date().toISOString(),
-        browserInfo: getBrowserName(),
+        browserInfo: `${getBrowserName()} on ${getOS()}`
       });
     } catch (err) {
       console.error("Guidance Error:", err);
 
       if (err.message === "UserNotFound") {
         setError("User not found. Please check the username and try again.");
+      } else if (err.message === "EmptyAIResponse") {
+        setError("AI failed to generate a response. Please try again.");
       } else if (err.response?.status === 429) {
         setError("Rate limit exceeded. Please try again later.");
       } else {
@@ -218,14 +179,25 @@ const LeetGuide = () => {
   };
 
   const getBrowserName = () => {
-  const userAgent = navigator.userAgent;
-  if (userAgent.includes("Chrome") && !userAgent.includes("Edg") && !userAgent.includes("OPR")) return "Chrome";
-  if (userAgent.includes("Firefox")) return "Firefox";
-  if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) return "Safari";
-  if (userAgent.includes("Edg")) return "Edge";
-  if (userAgent.includes("OPR") || userAgent.includes("Opera")) return "Opera";
+    const userAgent = navigator.userAgent;
+    if (userAgent.includes("Chrome") && !userAgent.includes("Edg") && !userAgent.includes("OPR"))
+      return "Chrome";
+    if (userAgent.includes("Firefox")) return "Firefox";
+    if (userAgent.includes("Safari") && !userAgent.includes("Chrome"))
+      return "Safari";
+    if (userAgent.includes("Edg")) return "Edge";
+    if (userAgent.includes("OPR") || userAgent.includes("Opera")) return "Opera";
+    return "Unknown";
+  };
+
+  const getOS = () => {
+  const platform = navigator.platform.toLowerCase();
+  if (platform.includes("win")) return "Windows";
+  if (platform.includes("mac")) return "macOS";
+  if (platform.includes("linux")) return "Linux";
   return "Unknown";
 };
+
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
@@ -239,7 +211,10 @@ const LeetGuide = () => {
 
         <InputBox
           value={username}
-          onChange={setUsername}
+          onChange={(val) => {
+            setUsername(val);
+            setError(""); // Clear error on typing
+          }}
           onSubmit={generateGuidance}
           isLoading={isLoading}
           buttonLabel={isLoading ? "Analyzing..." : "Get Guidance"}
