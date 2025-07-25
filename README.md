@@ -1,123 +1,100 @@
-Awesome, Hardik! Here's your final ✨polished, witty, and **badge-ready** `README.md` — now with **deployment instructions and cool badges**. Copy-paste ready:
+# 🧠 LeetGuide Frontend — Because Solving 500 Easy Problems Still Doesn't Make You Good at DP 😅
 
-````markdown
-# 🧠 LeetGuide — Because Solving 500 Easy Problems Still Doesn't Make You Good at DP 😅
-
-[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](../LICENSE)
 ![React](https://img.shields.io/badge/Frontend-React-blue)
-![Node.js](https://img.shields.io/badge/Backend-Node.js-yellow)
 ![LLM Powered](https://img.shields.io/badge/Powered%20By-Gemini-brightgreen)
 
----
-
-Welcome to **LeetGuide**, your brutally honest AI coding mentor. Enter your LeetCode username, and we’ll roast your progress — constructively, of course.
-
-Whether you're flexing with 300+ questions or crying over your 40% contest accuracy, LeetGuide gives you **personalized feedback** with just the right amount of sass.
+> 👀 Looking for the backend? Head over to 👉 [LeetGuide Backend Repo](https://github.com/imHardik1606/leetguide-backend)  
+> 🌐 Live Demo: [leetguide.vercel.app](https://leetguide-xi.vercel.app/)
 
 ---
 
-## 🚀 Features
-
-- 🔍 **LeetCode Profile Analysis**
-- 💡 **LLM-Generated Smart Tips**
-- 📊 **Topic-wise Breakdown**
-- 🧠 **Recommendations Based on Real Data**
-- 🚫 **No Rate Limit Worries** (Thanks, caching & proxy!)
-- 🧼 **Clean, minimal UI built with React**
+Welcome to the **Frontend** of **LeetGuide** — your no-filter AI mentor for LeetCode progress, brutally honest and powered by Gemini.
 
 ---
 
-## 📸 Sneak Peek
+## 💻 What This Does
 
-![LeetGuide Screenshot](./assets/leetguide-preview.png)
-> *Insert jaw drop here. We know it's nice.*
+- Fetches your LeetCode profile data via backend APIs  
+- Renders Gemini-powered advice (yes, it roasts you too)  
+- Clean, fast, and responsive UI using React & Tailwind  
+- Shows topic-wise stats, smart tips, and real-time feedback  
 
 ---
 
 ## 🧑‍💻 Tech Stack
 
-| Layer         | Tools Used                        |
-|---------------|-----------------------------------|
-| 🎨 Frontend   | React, Axios, Tailwind CSS        |
-| 🧪 Backend    | Node.js, Express.js, In-memory cache |
-| 🔗 APIs       | LeetCode (unofficial), Gemini LLM |
-| 💡 AI Engine  | Google Gemini (for real-time insights) |
+| Layer         | Tools Used           |
+|---------------|----------------------|
+| 🎨 UI         | React, Tailwind CSS  |
+| 📡 API Comm   | Axios                |
+| 🔐 Auth (opt) | JWT (Planned)        |
 
 ---
 
-## ⚙️ Getting Started Locally
+## 🛠️ Local Setup
 
-### 1. Clone the Repo
-```bash
-git clone https://github.com/yourusername/LeetGuide.git
-cd LeetGuide
-````
+Clone the repo:
 
-### 2. Backend Setup
+    git clone https://github.com/imHardik1606/leetguide-frontend.git
+    cd leetguide-frontend
 
-```bash
-cd api
-npm install
-nocemon server.js
-```
+Install dependencies:
 
-> 🔐 Create a `.env` file in the `server/` folder:
+    npm install
 
-```env
-PORT=5000
-GEMINI_API_KEY=your_gemini_api_key
-```
+Create a `.env` file:
 
-### 3. Frontend Setup
+    VITE_API_URL=backend.port
 
-```bash
-cd client
-npm install
-npm run dev
-```
+Start the dev server:
+
+    npm run dev
 
 ---
 
-## 💡 Sample Use-Case
+## 🖼️ Preview
 
-1. Enter your LeetCode username
-2. Click “Get Guidance”
-3. Receive actionable feedback like:
-
-   * “Stop avoiding Trees.”
-   * “You haven't touched a contest in 3 months. We noticed.”
-   * “Do more Medium problems. You're better than this.”
+![LeetGuide Screenshot](./public/preview.png)  
+> Minimal, clean, judgmental. Just like your mentor should be.
 
 ---
 
-## 📌 To-Do List
+## 🧪 Sample Use
 
-* [ ] Add support for Codeforces, HackerRank, etc.
-* [ ] Save user progress (cookies/db/auth)
-* [ ] Leaderboard of users based on improvement
-* [ ] Dark Mode (for your late-night grinds)
+1. Enter your LeetCode username  
+2. Click “Get Guidance”  
+3. Cry softly as Gemini tells you:  
+   - “You're allergic to Binary Trees.”  
+   - “You solved 92 Easy but only 3 Medium. Do better.”  
+   - “Contest rating? Is that a myth for you?”
 
 ---
 
-## 🤝 Contributing
+## 🔗 Backend API
 
-* Fork it
-* Clone it
-* Create a new branch
-* Make it better
-* Open a PR
+The frontend talks to this backend:  
+👉 [LeetGuide Backend](https://github.com/imHardik1606/leetguide-backend)  
+🌐 Live API: [leetguide-api.onrender.com](https://leetguide-api.onrender.com)
 
-> Contributions, bugs, features, even sarcastic suggestions — all welcome!
+---
+
+## 🤝 Contribute
+
+Pull requests and PR roastings welcome.  
+- Fork it  
+- Create a branch  
+- Improve it (or destroy it)  
+- Submit a PR
 
 ---
 
 ## 📄 License
 
-MIT. Use it, remix it, ship it. Just don’t resell it as "AI Prep Pro Max" for ₹499 on Instagram ads. 😅
+MIT. Use it, fork it, meme it — just don’t sell it as “DSA Prep Pro+ Ultra Max” for ₹499 on Instagram.
 
 ---
 
-## 👨‍💻 Made by
+## 👨‍💻 Built by
 
-**[Hardik Gayner](https://github.com/imHardik1606)** — fueled by late nights, debug sessions, and a strong urge to finally get good at DSA.
-
+**[Hardik Gayner](https://github.com/imHardik1606)** — Debugged with 💻, ☕, and Gemini sass.
