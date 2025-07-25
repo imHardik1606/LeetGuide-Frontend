@@ -150,14 +150,17 @@ const LeetGuide = () => {
 
       sessionStorage.setItem(
         cacheKey,
-        JSON.stringify({ guidance: aiResponse, timestamp: new Date().toISOString() })
+        JSON.stringify({
+          guidance: aiResponse,
+          timestamp: new Date().toISOString(),
+        })
       );
 
       await axios.post(`${API_BASE_URL}/saveReport`, {
         username,
         output: aiResponse,
         dateTime: new Date().toISOString(),
-        browserInfo: `${getBrowserName()} on ${getOS()}`
+        browserInfo: `${getBrowserName()} on ${getOS()}`,
       });
     } catch (err) {
       console.error("Guidance Error:", err);
@@ -180,31 +183,37 @@ const LeetGuide = () => {
 
   const getBrowserName = () => {
     const userAgent = navigator.userAgent;
-    if (userAgent.includes("Chrome") && !userAgent.includes("Edg") && !userAgent.includes("OPR"))
+    if (
+      userAgent.includes("Chrome") &&
+      !userAgent.includes("Edg") &&
+      !userAgent.includes("OPR")
+    )
       return "Chrome";
     if (userAgent.includes("Firefox")) return "Firefox";
     if (userAgent.includes("Safari") && !userAgent.includes("Chrome"))
       return "Safari";
     if (userAgent.includes("Edg")) return "Edge";
-    if (userAgent.includes("OPR") || userAgent.includes("Opera")) return "Opera";
+    if (userAgent.includes("OPR") || userAgent.includes("Opera"))
+      return "Opera";
     return "Unknown";
   };
 
   const getOS = () => {
-  const platform = navigator.platform.toLowerCase();
-  if (platform.includes("win")) return "Windows";
-  if (platform.includes("mac")) return "macOS";
-  if (platform.includes("linux")) return "Linux";
-  return "Unknown";
-};
-
+    const platform = navigator.platform.toLowerCase();
+    if (platform.includes("win")) return "Windows";
+    if (platform.includes("mac")) return "macOS";
+    if (platform.includes("linux")) return "Linux";
+    return "Unknown";
+  };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-lg p-8 w-full max-w-lg">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">LeetGuide</h1>
-          <p className="text-gray-600">
+    <div className="min-h-screen flex items-center justify-center px-4 py-6 sm:p-6">
+      <div className="bg-white rounded-xl shadow-lg w-full max-w-2xl p-4 sm:p-8">
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
+            LeetGuide
+          </h1>
+          <p className="text-gray-600 text-sm sm:text-base">
             Provide your Leetcode username, get personalized guidance 📈
           </p>
         </div>
@@ -221,7 +230,7 @@ const LeetGuide = () => {
         />
 
         {error && (
-          <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+          <div className="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm sm:text-base">
             {error}
           </div>
         )}
@@ -233,7 +242,7 @@ const LeetGuide = () => {
           title="Personalized Guidance"
         />
 
-        <div className="text-center mt-8 text-md text-gray-500">
+        <div className="text-center mt-6 sm:mt-8 text-xs sm:text-sm text-gray-500">
           Made by{" "}
           <span className="text-blue-500 font-bold">
             <a
